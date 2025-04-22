@@ -773,18 +773,12 @@ def food_prepared():
         'message': 'Order marked as ready for pickup'
     })
 
-@app.route('/api/delivery/accept_order', methods=['POST'])
+@app.route('/api/orders/<int:order_id>/accept', methods=['POST'])
 @login_required
 @allowed_roles(['delivery'])
-def accept_order():
+def accept_order(order_id):
     from urllib.parse import quote_plus
     
-    data = request.json
-    order_id = data.get('order_id')
-    
-    if not order_id:
-        return jsonify({'success': False, 'message': 'Order ID required'}), 400
-        
     order = Order.query.filter_by(
         id=order_id,
         status='ready',
@@ -799,12 +793,9 @@ def accept_order():
         order.status = 'picking'
         db.session.commit()
         
-        # Generate Google Maps URL
+        # Generate Google Maps URL from restaurant address
         restaurant_address = order.restaurant.address
-        if not restaurant_address.startswith('http'):
-            maps_url = f"https://www.google.com/maps/dir/?api=1&destination={quote_plus(restaurant_address)}"
-        else:
-            maps_url = restaurant_address
+        maps_url = restaurant_address if restaurant_address.startswith('http') else f"https://www.google.com/maps/dir/?api=1&destination={quote_plus(restaurant_address)}"
         
         return jsonify({
             'success': True,
@@ -816,6 +807,68 @@ def accept_order():
         return jsonify({
             'success': False,
             'message': f'Error accepting order: {str(e)}'
+        }), 500
+
+@app.route('/api/orders/<int:order_id>/picked-up', methods=['POST']) 
+@login_required
+@allowed_roles(['delivery'])
+def mark_picked_up(order_id):
+    from urllib.parse import quote_plus
+    
+    order = Order.query.filter_by(
+        id=order_id,
+        delivery_partner_id=current_user.id,
+        status='picking'
+    ).first()
+    
+    if not order:
+        return jsonify({'success': False, 'message': 'Order not found or unauthorized'}), 404
+        
+    try:
+        order.status = 'delivering'
+        db.session.commit()
+        
+        # Generate Google Maps URL from customer address  
+        customer_address = order.delivery_address
+        maps_url = f"https://www.google.com/maps/dir/?api=1&destination={quote_plus(customer_address)}"
+        
+        return jsonify({
+            'success': True,
+            'message': 'Order picked up successfully',
+            'maps_url': maps_url
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False, 
+            'message': f'Error updating order: {str(e)}'
+        }), 500
+
+@app.route('/api/orders/<int:order_id>/delivered', methods=['POST'])
+@login_required
+@allowed_roles(['delivery'])
+def mark_delivered(order_id):
+    order = Order.query.filter_by(
+        id=order_id,
+        delivery_partner_id=current_user.id,
+        status='delivering'
+    ).first()
+    
+    if not order:
+        return jsonify({'success': False, 'message': 'Order not found or unauthorized'}), 404
+        
+    try:
+        order.status = 'completed'
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Order completed successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error completing order: {str(e)}'
         }), 500
 
 @app.route('/api/delivery/available_orders')

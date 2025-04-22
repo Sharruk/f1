@@ -323,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Accept Order Buttons
+    // Accept Order Buttons
     const acceptOrderButtons = document.querySelectorAll('.accept-order-btn');
     acceptOrderButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -342,14 +343,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Open Google Maps in new tab
+                    window.open(data.maps_url, '_blank');
                     // Reload page to reflect changes
                     window.location.reload();
                 } else {
                     // Reset button if failed
                     this.disabled = false;
                     this.innerHTML = '<i class="fas fa-check me-1"></i> Accept';
-
-                    // Show error message
                     alert('Failed to accept order: ' + data.message);
                 }
             })
@@ -358,6 +359,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-check me-1"></i> Accept';
                 alert('Error accepting order. Please try again.');
+            });
+        });
+    });
+
+    // Update Status Buttons (Picked Up & Delivered)
+    const updateStatusButtons = document.querySelectorAll('.update-status-btn');
+    updateStatusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            const status = this.getAttribute('data-status');
+            
+            // Disable button 
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+
+            const endpoint = status === 'delivering' ? 
+                `/api/orders/${orderId}/picked-up` : 
+                `/api/orders/${orderId}/delivered`;
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.maps_url) {
+                        // For picked-up status, open customer location in maps
+                        window.open(data.maps_url, '_blank');
+                    }
+                    window.location.reload();
+                } else {
+                    this.disabled = false;
+                    this.innerHTML = status === 'delivering' ? 
+                        '<i class="fas fa-box-open me-1"></i> Picked Up' : 
+                        '<i class="fas fa-check-circle me-1"></i> Delivered';
+                    alert(data.message || 'Error updating status');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                this.disabled = false;
+                this.innerHTML = status === 'delivering' ? 
+                    '<i class="fas fa-box-open me-1"></i> Picked Up' : 
+                    '<i class="fas fa-check-circle me-1"></i> Delivered';
+                alert('Error updating status. Please try again.');
             });
         });
     });
