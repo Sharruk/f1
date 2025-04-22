@@ -15,7 +15,9 @@ from utils import allowed_roles
 from forms import LoginForm, RegisterForm, CompleteProfileForm
 
 # Configure Stripe
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+if not stripe.api_key:
+    print("Warning: Stripe API key not set. Stripe payments will not work.")
 
 
 

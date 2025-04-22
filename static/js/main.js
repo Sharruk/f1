@@ -101,29 +101,36 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const input = this.parentElement.querySelector('input[type="number"]') || 
                           this.nextElementSibling;
-            const currentValue = parseInt(input.value || input.textContent);
+            const currentValue = parseInt(input.value || input.textContent) || 0;
             
-            if (currentValue > 1) {
+            if (currentValue > 0) {
+                const newValue = currentValue - 1;
                 if (input.tagName === 'INPUT') {
-                    input.value = currentValue - 1;
+                    input.value = newValue;
                 } else {
-                    input.textContent = currentValue - 1;
+                    input.textContent = newValue;
                 }
+                input.dispatchEvent(new Event('change'));
             }
         });
     });
     
     increaseButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const input = this.parentElement.querySelector('input[type="number"]');
+            const input = this.parentElement.querySelector('input[type="number"]') || 
+                          this.nextElementSibling;
             if (!input) return;
             
-            const currentValue = parseInt(input.value);
+            const currentValue = parseInt(input.value || input.textContent) || 0;
             const max = parseInt(input.getAttribute('max') || 10);
             
             if (currentValue < max) {
-                input.value = currentValue + 1;
-                // Trigger change event to update cart
+                const newValue = currentValue + 1;
+                if (input.tagName === 'INPUT') {
+                    input.value = newValue;
+                } else {
+                    input.textContent = newValue;
+                }
                 input.dispatchEvent(new Event('change'));
             }
         });
