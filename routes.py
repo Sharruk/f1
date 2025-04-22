@@ -781,7 +781,7 @@ def accept_order(order_id):
     
     order = Order.query.filter_by(
         id=order_id,
-        status='ready',
+        status='pending',
         delivery_partner_id=None
     ).first()
     
@@ -818,7 +818,7 @@ def mark_picked_up(order_id):
     order = Order.query.filter_by(
         id=order_id,
         delivery_partner_id=current_user.id,
-        status='picking'
+        status='accepted'
     ).first()
     
     if not order:
@@ -851,7 +851,7 @@ def mark_delivered(order_id):
     order = Order.query.filter_by(
         id=order_id,
         delivery_partner_id=current_user.id,
-        status='delivering'
+        status='pickedup'
     ).first()
     
     if not order:

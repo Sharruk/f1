@@ -87,7 +87,7 @@ class Order(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)
     delivery_partner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    status = db.Column(db.String(20), default='pending')  # pending, preparing, ready_for_pickup, picking, delivering, completed, cancelled
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, pickedup, completed, cancelled
     total_amount = db.Column(db.Float, nullable=False)
     delivery_address = db.Column(db.Text, nullable=False)
     payment_method = db.Column(db.String(20), default='cash')  # cash, online
